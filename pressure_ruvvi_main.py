@@ -10,80 +10,98 @@ import os
 
 
 async def ruuvi(n):
+    """
+    Main function to connect to Ruuvi devices, subscribe to notifications, and handle disconnections.
+    """
 
-    # Logging config
+    # Set up logging
+    setup_logging()
+
+    # Find all devices
+    device_info = await pr.find_all_devices(n)
+
+    # Connect to all devices and subscribe to notifications
+    clients, clients_address, disconnected_address = await connect_and_subscribe(device_info)
+
+    # Monitor for user input and handle disconnections
+    user_input = await monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address)
+
+    return user_input
+
+
+def setup_logging():
+    """
+    Set up logging to both a file and stdout.
+    """
     file_handler = logging.FileHandler(filename='pressure_ruvvi_log.txt', mode='w')
     stdout_handler = logging.StreamHandler(sys.stdout)
     handlers = [file_handler, stdout_handler]
     logging.basicConfig(handlers=handlers, level=logging.INFO)
     logging.getLogger('bleak.backends.winrt.client').disabled = True
 
-    # Get number of devices expected
-    # n_devices = int(sys.argv[1])
 
-    # Find address of all devices
-    
-    # logging.info(f' Expected number of devices: {n}')
-    device_info = await pr.find_all_devices(n)
-        
-    # Test connections
-    # await pr.test_all_connections(device_info)
-
-    # Info
+async def connect_and_subscribe(device_info):
+    """
+    Connect to all devices and subscribe to notifications.
+    """
     clients = []
     clients_address = []
     disconnected_address = []
 
-    # Loop to connect all devices
-    for d in device_info:
-        c = await pr.try_until_connect(d, disconnected_address)
-        clients.append(c)
-        # document client address
-        clients_address.append(c.address)
+    for device in device_info:
+        client = await pr.try_until_connect(device, disconnected_address)
+        clients.append(client)
+        clients_address.append(client.address)
+        await pr.subscribe_notification(client)
 
-    # subscribe_notification
-    for c in clients:
-            await pr.subscribe_notification(c)
+    return clients, clients_address, disconnected_address
 
-    # scan for user input to stop and check for disconnection
-    t = 0
+
+async def monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address):
+    """
+    Monitor for user input and handle disconnections.
+    """
+    total_time = 0
+
     while True:
-        
-        start = time.time()
+        start_time = time.time()
+
         if disconnected_address:
-
-            # pop out current disconnected address
-            da = disconnected_address.pop()
-            ind = clients_address.index(da)
-
-            # re-ordering address order
-            clients_address.append(clients_address.pop(ind))
-            device_info.append(device_info.pop(ind))
-
-            del(clients[ind])
-
-            # reconnection
-            c = await pr.try_until_connect(device_info[-1], disconnected_address)
-            clients.append(c)
-
-            await pr.subscribe_notification(c)           
-        
+            await handle_disconnection(clients, clients_address, disconnected_address, device_info)
         else:
-
-            # Check if there is a user input 
             try:
-                line = inputimeout.inputimeout(prompt = ("duration:"+ str(t)), timeout = 0.001)
-                
-                for c in clients:
-                    await c.disconnect()
+                user_input = inputimeout.inputimeout(prompt=f"duration:{total_time}", timeout=0.001)
+
+                for client in clients:
+                    await client.disconnect()
                 break
 
             except inputimeout.TimeoutOccurred:
-                pass 
-            
-            # wait for 1 sec
-            await asyncio.sleep(1)
-        end = time.time()
-        t = t+(end-start)
+                pass
 
-    return line
+            await asyncio.sleep(1)
+
+        end_time = time.time()
+        total_time += (end_time - start_time)
+
+    return user_input
+
+
+async def handle_disconnection(clients, clients_address, disconnected_address, device_info):
+    """
+    Handle a disconnection by reconnecting and subscribing to notifications.
+    """
+    disconnected_address = disconnected_address.pop()
+    index = clients_address.index(disconnected_address)
+
+    # Re-order addresses
+    clients_address.append(clients_address.pop(index))
+    device_info.append(device_info.pop(index))
+
+    del(clients[index])
+
+    # Reconnect
+    client = await pr.try_until_connect(device_info[-1], disconnected_address)
+    clients.append(client)
+
+    await pr.subscribe_notification(client)

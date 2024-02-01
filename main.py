@@ -11,6 +11,8 @@ import pressure_ruvvi_main as pr_main
 
 
 class LogHandler(logging.Handler):
+    """Custom logging handler that updates a GUI with log messages."""
+
     def __init__(self, update_callback):
         super(LogHandler, self).__init__()
         self.update_callback = update_callback
@@ -21,6 +23,8 @@ class LogHandler(logging.Handler):
 
 
 class LoggerOutput:
+    """Custom output stream that updates a GUI with messages."""
+
     def __init__(self, update_callback):
         self.update_callback = update_callback
 
@@ -32,9 +36,16 @@ class LoggerOutput:
 
 
 class PressureRuvviApp(App):
-    def build(self):
-        self.layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+    """Main application class."""
 
+    def build(self):
+        """Set up the GUI."""
+        self.layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        self.setup_gui()
+        return self.layout
+
+    def setup_gui(self):
+        """Create the GUI elements."""
         self.num_devices_input = TextInput(hint_text='Number of devices', multiline=False)
         self.start_button = Button(text='Start', on_press=self.start_pressed)
         self.logger_text = TextInput(text='', height=300, multiline=True)
@@ -43,44 +54,43 @@ class PressureRuvviApp(App):
         self.layout.add_widget(self.start_button)
         self.layout.add_widget(self.logger_text)
 
-        return self.layout
-
     def start_pressed(self, instance):
+        """Handle the Start button press event."""
         self.start_button.disabled = True
         num_devices = int(self.num_devices_input.text)
 
         self.logger_text.text += f'Connecting...'
 
+        self.setup_logging_and_output()
+
+        Clock.schedule_once(lambda dt: self.run_pressure_ruvvi_main(pr_main, num_devices), 0)
+
+    def setup_logging_and_output(self):
+        """Set up logging and output redirection."""
         self.log_handler = LogHandler(self.update_logger_text)
         logging.basicConfig(level=logging.INFO, handlers=[self.log_handler])
 
         sys.stdout = LoggerOutput(self.update_logger_text)
         sys.stderr = LoggerOutput(self.update_logger_text)
 
-        Clock.schedule_once(lambda dt: self.run_pressure_ruvvi_main(pr_main, num_devices), 0)
-
     def update_logger_text(self, log_message):
+        """Update the logger text input with a new log message."""
         self.logger_text.text += f'\n{log_message}'
 
     def run_pressure_ruvvi_main(self, pr_main, num_devices):
-        # Run pressure_ruvvi_main with the specified number of devices in a separate thread
+        """Run pressure_ruvvi_main with the specified number of devices in a separate thread."""
         self.data_collection_thread = threading.Thread(
             target=self.run_pressure_ruvvi_main_thread, args=(pr_main, num_devices)
         )
         self.data_collection_thread.start()
 
     def run_pressure_ruvvi_main_thread(self, pr_main, num_devices):
-        # Use asyncio's event loop in a separate thread
+        """Use asyncio's event loop in a separate thread."""
         asyncio.set_event_loop(asyncio.new_event_loop())
         loop = asyncio.get_event_loop()
 
         try:
-            # Redirect logs to the LogHandler
-            pr_main.logging.basicConfig(level=pr_main.logging.INFO, handlers=[self.log_handler])
-
-            # Redirect standard output and error
-            sys.stdout = LoggerOutput(self.update_logger_text)
-            sys.stderr = LoggerOutput(self.update_logger_text)
+            self.setup_logging_and_output()
 
             # Run the pressure_ruvvi_main script
             loop.run_until_complete(pr_main.ruuvi(num_devices))
