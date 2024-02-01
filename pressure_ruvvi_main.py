@@ -70,7 +70,7 @@ async def monitor_user_input_and_handle_disconnections(clients, clients_address,
             await handle_disconnection(clients, clients_address, disconnected_address, device_info)
         else:
             try:
-                user_input = inputimeout.inputimeout(prompt=f"duration:{total_time}", timeout=0.001)
+                user_input = inputimeout.inputimeout(prompt=f"duration: {int(total_time)}", timeout=0.001)
 
                 for client in clients:
                     await client.disconnect()
