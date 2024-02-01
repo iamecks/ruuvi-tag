@@ -24,7 +24,7 @@ async def ruuvi(n):
     clients, clients_address, disconnected_address = await connect_and_subscribe(device_info)
 
     # Monitor for user input and handle disconnections
-    user_input = await monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address)
+    user_input = await monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address, device_info)
 
     return user_input
 
@@ -57,7 +57,7 @@ async def connect_and_subscribe(device_info):
     return clients, clients_address, disconnected_address
 
 
-async def monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address):
+async def monitor_user_input_and_handle_disconnections(clients, clients_address, disconnected_address, device_info):
     """
     Monitor for user input and handle disconnections.
     """
