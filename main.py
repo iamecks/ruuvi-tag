@@ -48,8 +48,8 @@ class PressureRuvviApp(App):
 
     def setup_gui(self):
         """Create the GUI elements."""
-        self.num_devices_input = TextInput(hint_text='Number of devices', multiline=False, size_hint_y=None, height=30)
-        self.logging_window_label = Label(text='Logging:', size_hint_y=None, height=20,halign='left', valign='top')
+        self.num_devices_input = TextInput(hint_text='Number of devices', multiline=False, size_hint_y=None, height=35)
+        self.logging_window_label = Label(text='Logging:', size_hint_y=None, height=25,halign='left', valign='top')
         self.logging_window_label.bind(size=self.logging_window_label.setter('text_size'))
         self.start_button = Button(text='Start', on_press=self.start_pressed, size_hint=(None, None), width=100,height=30)
         self.stop_button = Button(text='Stop', on_press=self.stop_pressed, size_hint=(None, None), width=100, height=30, disabled=True)  # Create a new Stop button
