@@ -95,10 +95,17 @@ class PressureRuvviApp(App):
         sys.stdout = LoggerOutput(self.update_logger_text)
         sys.stderr = LoggerOutput(self.update_logger_text)
 
-    def stop_pressed(self, instance):  # New stop_pressed method
+    def stop_pressed(self, instance):
         """Handle the Stop button press event."""
         if self.data_collection_thread.is_alive():
-            self.data_collection_thread.join()  # Stop the data collection thread
+            # Cancel all running tasks
+            for task in asyncio.all_tasks(self.loop):
+                task.cancel()
+            # Stop the loop and the thread
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            self.data_collection_thread.join()
+            self.logger_text.text += f'\nData collection stopped.\n'
+            self.start_button.disabled = False
 
     def update_logger_text(self, log_message):
         """Update the logger text input with a new log message."""
@@ -114,13 +121,13 @@ class PressureRuvviApp(App):
     def run_pressure_ruvvi_main_thread(self, pr_main, num_devices):
         """Use asyncio's event loop in a separate thread."""
         asyncio.set_event_loop(asyncio.new_event_loop())
-        loop = asyncio.get_event_loop()
+        self.loop = asyncio.get_event_loop()
 
         try:
             self.setup_logging_and_output()
 
             # Run the pressure_ruvvi_main script
-            loop.run_until_complete(pr_main.ruuvi(num_devices))
+            self.loop.run_until_complete(pr_main.ruuvi(num_devices))
         except asyncio.CancelledError:
             pass
 
