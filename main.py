@@ -105,7 +105,7 @@ class PressureRuvviApp(App):
             self.loop.call_soon_threadsafe(self.loop.stop)
             self.data_collection_thread.join()
             self.logger_text.text += f'\nData collection stopped.\n'
-            self.start_button.disabled = False
+            self.start_button.opacity = 0
 
     def stop(self, *args):
         """Handle the application close event."""
