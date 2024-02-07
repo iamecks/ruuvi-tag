@@ -107,6 +107,11 @@ class PressureRuvviApp(App):
             self.logger_text.text += f'\nData collection stopped.\n'
             self.start_button.disabled = False
 
+    def stop(self, *args):
+        """Handle the application close event."""
+        self.stop_pressed(None)
+        super().stop()  # Call the original stop method to ensure the app is closed properly
+
     def update_logger_text(self, log_message):
         """Update the logger text input with a new log message."""
         self.logger_text.text += f'\n{log_message}'
