@@ -79,13 +79,27 @@ class PressureRuvviApp(App):
     def start_pressed(self, instance):
         """Handle the Start button press event."""
         self.start_button.disabled = True
-        num_devices = int(self.num_devices_input.text)
+        try:
+            num_devices = int(self.num_devices_input.text)
+        except ValueError:
+            print("Invalid number of devices. Please enter an integer.")
+            return
+
+        if num_devices <= 0:
+            return
 
         self.logger_text.text += f'Connecting...'
 
         self.setup_logging_and_output()
 
+        # Schedule the enable_stop_button function to run after 1 second
+        Clock.schedule_once(self.enable_stop_button, 1)
+
         Clock.schedule_once(lambda dt: self.run_pressure_ruvvi_main(pr_main, num_devices), 0)
+
+    def enable_stop_button(self, dt):
+        """Enable the stop button."""
+        self.stop_button.disabled = False
 
     def setup_logging_and_output(self):
         """Set up logging and output redirection."""
