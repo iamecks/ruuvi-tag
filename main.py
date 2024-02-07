@@ -52,7 +52,7 @@ class PressureRuvviApp(App):
         self.logging_window_label = Label(text='Logging:', size_hint_y=None, height=20,halign='left', valign='top')
         self.logging_window_label.bind(size=self.logging_window_label.setter('text_size'))
         self.start_button = Button(text='Start', on_press=self.start_pressed, size_hint=(None, None), width=100,height=30)
-        self.stop_button = Button(text='Stop', on_press=self.stop_pressed, size_hint=(None, None), width=100, height=30)  # Create a new Stop button
+        self.stop_button = Button(text='Stop', on_press=self.stop_pressed, size_hint=(None, None), width=100, height=30, disabled=True)  # Create a new Stop button
         self.logger_text = TextInput(text='', height=300, multiline=True, background_color=[0.9, 0.9, 0.9, 1])
 
         # Create BoxLayouts for the buttons
