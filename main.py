@@ -88,12 +88,9 @@ class PressureRuvviApp(App):
         if num_devices <= 0:
             return
 
-        self.logger_text.text += f'Connecting...'
+        self.logger_text.text += f'Connecting...\n'
 
         self.setup_logging_and_output()
-
-        # Schedule the enable_stop_button function to run after 1 second
-        Clock.schedule_once(self.enable_stop_button, 1)
 
         Clock.schedule_once(lambda dt: self.run_pressure_ruvvi_main(pr_main, num_devices), 0)
 
@@ -128,13 +125,14 @@ class PressureRuvviApp(App):
 
     def update_logger_text(self, log_message):
         """Update the logger text input with a new log message."""
-        self.logger_text.text += f'\n{log_message}'
+        new_log = log_message.strip().lower()
+        if new_log.startswith('duration'):
+            Clock.schedule_once(self.enable_stop_button, 1)
+        self.logger_text.text += f'{log_message}'
 
     def run_pressure_ruvvi_main(self, pr_main, num_devices):
         """Run pressure_ruvvi_main with the specified number of devices in a separate thread."""
-        self.data_collection_thread = threading.Thread(
-            target=self.run_pressure_ruvvi_main_thread, args=(pr_main, num_devices)
-        )
+        self.data_collection_thread = threading.Thread(target=self.run_pressure_ruvvi_main_thread, args=(pr_main, num_devices))
         self.data_collection_thread.start()
 
     def run_pressure_ruvvi_main_thread(self, pr_main, num_devices):
